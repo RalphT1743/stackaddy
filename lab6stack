@@ -1,0 +1,308 @@
+;=================================================
+; Name: Ralph Torres
+; Email: rtor085@ucr.edu
+; 
+; Lab: lab 6, ex 3
+; Lab section: 024
+; TA: Westin
+; 
+;=================================================
+;=================================================
+; Name: Ralph Torres
+; Email: rtorr085@ucr.edu
+; 
+; Lab: lab 6, ex 2
+; Lab section: 024
+; TA: Westin
+; 
+;=================================================
+.ORIG x3000
+; Load register-backup stack
+LD R6, REG_STACK
+LD R2, SUB_RPM_ADD
+LD R3, STACK_BASE
+LD R4, STACK_MAX
+LD R5, TOS
+
+JSRR R2
+; ...
+HALT
+; Local Data
+REG_STACK   .FILL   xFE00
+STACK_BASE  .FILL   xA000
+STACK_MAX   .FILL   xA005
+TOS         .FILL   xA000
+SUB_RPM_ADD .FILL   x3200
+
+.END
+;------------------------------------------------------------------------------------------
+; Subroutine: SUB_RPN_ADDITION
+; Parameter (R3): BASE: A pointer to the base (one less than the lowest available                      ;                       address) of the stack
+; Parameter (R4): MAX: The "highest" available address in the stack
+; Parameter (R5): TOS (Top of Stack): A pointer to the current top of the stack
+; Postcondition: The subroutine has popped off the top two values of the stack,
+;		    added them together, and pushed the resulting value back
+;		    onto the stack.
+; Return Value: R5 ← updated TOS address
+;------------------------------------------------------------------------------------------
+.ORIG x3200
+ADD R6, R6, #-1
+STR R7, R6, #0 ; BACK UP R7
+ADD R6, R6, #-1
+STR R2, R2, #0 ; BACK UP R2
+
+LD R2, SUB_GET_NUM
+JSRR R2
+
+LD R2, SUB_ADDITION
+JSRR R2
+
+LD R2, SUB_PRINT_DIGIT
+JSRR R2
+
+RET
+
+;===SUBROUTINE==DATA===
+SUB_GET_NUM .FILL x3400
+SUB_ADDITION    .FILL   x3600
+SUB_PRINT_DIGIT .FILL   x3800
+
+.END
+;------------------------------------------------------------------------------------------
+;Subroutine:SUB_GET_NUM
+;------------------------------------------------------------------------------------------
+.ORIG x3400
+
+ADD R6, R6, #-1
+STR R7, R6, #0 ; BACK UP R7
+ADD R6, R6, #-1
+STR R0, R6, #0 ; BACK UP R0
+ADD R6, R6, #-1
+STR R2, R2, #0 ; BACK UP R2
+
+LEA R0, USER_INPUT_1
+PUTS    ;prints out message for user
+
+GETC 
+OUT
+
+LD R2, DEC_48   ; LOAD 48 ONTO R2
+
+NOT R2, R2
+ADD R2, R2, #1  ;ADD 1 TO COMP
+ADD R1, R0, R2
+
+LD R2, SUB_STACK_PUSH
+JSRR R2
+
+
+LEA R0, USER_INPUT_2
+PUTS        ;stores message for user
+
+GETC        ;takes input from user
+OUT
+LD R2, DEC_48   ;LOAD 48 INTO R2
+NOT R2, R2
+ADD R2, R2, #1
+ADD R1, R0, R2
+
+LD R2, SUB_STACK_PUSH ;stores first value to the stack
+JSRR R2
+
+LEA R0, USER_INPUT_3
+PUTS
+
+GETC
+OUT
+
+GETC
+OUT
+
+LDR R2, R6, #0      ;restore R2
+ADD R6, R6, #1
+
+LDR R0, R6, #0      ;restore R0
+ADD R6, R6, #1
+
+LDR R7, R6, #0      ;restore R7
+ADD R6, R6, #1
+
+RET
+
+;====SUBROUTINE DATA===
+SUB_STACK_PUSH .FILL   x4000
+DEC_48  .FILL  x30
+
+USER_INPUT_1    .STRINGZ    "Input the first operand!\n"
+USER_INPUT_2    .STRINGZ    "\nInput the second operand!\n"
+USER_INPUT_3    .STRINGZ    "\nInput the operator then press ENTER!\n"
+
+.END
+;------------------------------------------------------------------------------------------
+;Subroutine:SUB_ADDITION
+;------------------------------------------------------------------------------------------
+.ORIG x3600
+ADD R6, R6, #-1
+STR R7, R6, #0 ; BACK UP R7
+ADD R6, R6, #-1
+STR R2, R6, #0 ; BACK UP R2
+ADD R6, R6, #-1
+STR R1, R6, #0 ; BACK UP R1
+
+LD R2, SUB_STACK_POP
+JSRR R2
+
+ADD R1, R0, #0
+
+LD R2, SUB_STACK_POP
+JSRR R2
+
+ADD R1, R0, R1
+
+LD R2, SUB_STACK_PUSH_2
+JSRR R2
+
+LDR R1, R6, #0
+ADD R6, R6, #1
+LDR R2, R6, #0
+ADD R6, R6, #1
+LDR R7, R6, #0
+ADD R6, R6, #1
+
+RET
+
+;===SUBROUTINE DATA===
+SUB_STACK_POP   .FILL x4200
+SUB_STACK_PUSH_2    .FILL   x4000
+.END
+
+;------------------------------------------------------------------------------------------
+;Subroutine:SUB_PRINT_DIGIT_4200
+;------------------------------------------------------------------------------------------
+.ORIG x3800
+ADD R6, R6, #-1
+STR R7, R6, #0  ;restore R7
+ADD R6, R6, #-1
+STR R1, R6, #0  ;restore R1
+
+LEA R0, RESULT_MSG
+PUTS
+
+LD R2, SUB_STACK_POP_2
+JSRR R2
+
+LD R1, DEC_48_2
+
+ADD R0, R0, R1
+OUT
+
+LDR R1, R6, #0
+ADD R6, R6, #1
+LDR R7, R6, #0
+ADD R6, R6, #1
+
+RET
+
+;====SUBROUTINE DATA====
+DEC_48_2    .FILL   x30
+SUB_STACK_POP_2 .FILL   x4200
+RESULT_MSG  .STRINGZ    "Results:\n"
+
+.END
+
+;------------------------------------------------------------------------------------------
+; Subroutine: SUB_STACK_PUSH
+; Parameter (R1): The value to push onto the stack
+; Parameter (R3): BASE: A pointer to the base (one less than the lowest available address) of
+;the stack
+; Parameter (R4): MAX: The "highest" available address in the stack
+; Parameter (R5): TOS (Top of Stack): A pointer to the current top of the stack
+; Postcondition: The subroutine has pushed (R1) onto the stack (i.e to address TOS+1).
+; If the stack was already full (TOS = MAX), the subroutine has printed an
+; overflow error message and terminated.
+; Return Value: R5 ← updated TOS
+;------------------------------------------------------------------------------------------
+.ORIG x4000
+
+ADD R6, R6, #-1
+STR R7, R6, #0  ;restore R7
+ADD R6, R6, #-1
+STR R0, R6, #0  ;restore R0
+
+NOT R5, R5      ;checking if stack is full
+ADD R5, R5, #1
+ADD R0, R5, R4      ;adding negative R5 and R4, if result is zero, stack is full
+BRz OVERFLOW        ; jump to branch if zero to overflow
+
+PUSH
+    NOT R5, R5      ;switch R5 to positive so it represents top of stack again
+    ADD R5, R5, #1
+    
+    ADD R5, R5, #1  ;increment top of stack to points to next available memory space
+    STR R1, R5, #0  ;push value of R1 onto stack-> this stores it at memory location pointed by TOS
+    
+    BR END_PUSH     ;branch to end PUSH
+
+OVERFLOW        ;beginning of overflow branch, only if stack is full
+    NOT R5, R5
+    ADD R5, R5, #1
+    
+    LEA R0 OVERFLOW_USER_MSG        ;Loads R0 with overflow message
+    PUTS                            ;prints from R0 to console
+    
+END_PUSH
+RET             ; end of subroutine, return now
+
+;====SUBROUTINE==DATA======
+OVERFLOW_USER_MSG   .STRINGZ    "Cannot push on a full stack!\n"    ;overflow message
+.END        ; end of program
+;--------------------------------------------------------
+;Subroutine: SUB_STACK_POP
+;Parameter (R3): A pointer to the base(one before lowest availabe address)
+;Parameter (R4): MAX: The highest available address in the stack
+;Parameter (R5): TOS: Top addr of the stack.
+;Postcondition: The subnroutine will pop the TOS of the stack and copy it to R0.
+;               If stack is empty, TOS = BASE, the underflow error message excecuted then terminated
+;Return values: r0 <-- value poped of the stack
+;               r5 <-- updated TOS
+;--------------------------------------------------------
+.ORIG x4200         ;beginning of pop subroutine
+ADD R6, R6, #-1
+STR R7, R6, #0  ;restores R7
+
+ADD R6, R6, #-1
+STR R2, R6, #0  ;retores R2
+
+NOT R5, R5
+ADD R5, R5, #1      ; turn R5 negative
+
+ADD R2, R3, R5, ;if R3 - R5 == 0 -> underflow error
+BRz UNDERFLOW
+
+POP             ; loop to pop value out
+    NOT R5, R5
+    ADD R5, R5, #1  ; make R5 positive again
+    LDR R0, R5, #0  ; copies value in R0 and puts it in R0
+    ADD R5, R5, #-1 ; subtract R5 by 1 (POP)
+    BR END_POP
+    
+UNDERFLOW
+    NOT R5, R5
+    ADD R5, R5, #1  ;makes R5 positive again
+    LEA R0, UNDERFLOW_USER_MSG  ;loads underflow message to R0
+    PUTS        ; outputs message to console
+    
+END_POP
+
+LDR R2, R6, #0
+ADD R6, R6, #1      ;RESTORE R2
+
+LDR R7, R6, #0
+ADD R6, R6, #1      ;RESTORE R7
+
+RET
+
+;===SUBROUTINE==DATA===
+UNDERFLOW_USER_MSG  .STRINGZ    "Cannot pop on an empty stack!\n"
+
+.END
